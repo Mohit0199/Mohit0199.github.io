@@ -193,6 +193,75 @@
 				cursor: pointer;
 			}
 
+			/* Modern Glassmorphic Projects Pagination */
+			.pagination-container {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				gap: 8px;
+				margin: 30px auto 10px auto;
+				padding: 10px 16px;
+				background: rgba(15, 23, 42, 0.88);
+				backdrop-filter: blur(14px);
+				-webkit-backdrop-filter: blur(14px);
+				border: 1px solid rgba(56, 189, 248, 0.35);
+				border-radius: 50px;
+				width: fit-content;
+				max-width: 95vw;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.2);
+				flex-wrap: wrap;
+				z-index: 10;
+				position: relative;
+			}
+
+			.pagination-btn {
+				background: rgba(255, 255, 255, 0.06);
+				border: 1px solid rgba(255, 255, 255, 0.12);
+				color: #ffffff !important;
+				font-weight: 600;
+				font-size: 0.85rem;
+				min-width: 38px;
+				height: 38px;
+				line-height: 36px;
+				padding: 0 14px;
+				border-radius: 20px;
+				cursor: pointer;
+				text-align: center;
+				text-decoration: none;
+				transition: all 0.25s cubic-bezier(.25,.8,.25,1);
+				user-select: none;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				gap: 6px;
+			}
+
+			.pagination-btn:hover:not(.disabled) {
+				background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(99, 102, 241, 0.4));
+				border-color: #38bdf8;
+				color: #ffffff !important;
+				box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+				transform: translateY(-2px);
+			}
+
+			.pagination-btn.active {
+				background: linear-gradient(135deg, #0284c7, #6366f1) !important;
+				border-color: #38bdf8 !important;
+				color: #ffffff !important;
+				font-weight: 700;
+				box-shadow: 0 0 20px rgba(56, 189, 248, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.3);
+			}
+
+			.pagination-btn.disabled {
+				opacity: 0.3;
+				cursor: not-allowed;
+				pointer-events: none;
+			}
+
+			.project.hidden-project {
+				display: none !important;
+			}
+
 			/* Modern Glassmorphic Hero & Landing Header */
 			#header {
 				padding: 1.5rem 0;
@@ -1213,6 +1282,108 @@
 						window.history.pushState(null, '', window.location.href);
 					}
 				});
+
+				// Dynamic 9-items-per-page (3x3) Pagination for Projects
+				(function initProjectsPagination() {
+					const projectsGrid = document.querySelector('.projects-grid');
+					if (!projectsGrid) return;
+
+					const projects = Array.from(projectsGrid.querySelectorAll('.project'));
+					const itemsPerPage = 9;
+					const totalPages = Math.ceil(projects.length / itemsPerPage);
+					let currentPage = 1;
+
+					// Create pagination container
+					const paginationContainer = document.createElement('div');
+					paginationContainer.className = 'pagination-container';
+					paginationContainer.id = 'projects-pagination';
+					projectsGrid.parentNode.appendChild(paginationContainer);
+
+					function showPage(page) {
+						if (page < 1) page = 1;
+						if (page > totalPages) page = totalPages;
+						currentPage = page;
+
+						const startIndex = (page - 1) * itemsPerPage;
+						const endIndex = startIndex + itemsPerPage;
+
+						projects.forEach((proj, idx) => {
+							if (idx >= startIndex && idx < endIndex) {
+								proj.classList.remove('hidden-project');
+								const card = proj.querySelector('.card');
+								if (card) {
+									card.style.animation = 'none';
+									void card.offsetWidth; // trigger reflow
+									const delay = ((idx - startIndex) * 0.05).toFixed(2);
+									card.style.animation = `fadeInUp 0.5s ease-out ${delay}s forwards`;
+								}
+							} else {
+								proj.classList.add('hidden-project');
+							}
+						});
+
+						renderPaginationControls();
+					}
+
+					function renderPaginationControls() {
+						paginationContainer.innerHTML = '';
+
+						// Prev Button
+						const prevBtn = document.createElement('button');
+						prevBtn.className = `pagination-btn ${currentPage === 1 ? 'disabled' : ''}`;
+						prevBtn.innerHTML = '<i class="fa fa-chevron-left"></i> Prev';
+						prevBtn.onclick = function(e) {
+							e.preventDefault();
+							if (currentPage > 1) {
+								showPage(currentPage - 1);
+								scrollToProjectsTop();
+							}
+						};
+						paginationContainer.appendChild(prevBtn);
+
+						// Page Number Buttons
+						for (let i = 1; i <= totalPages; i++) {
+							const pageBtn = document.createElement('button');
+							pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+							pageBtn.innerText = i;
+							pageBtn.onclick = (function(p) {
+								return function(e) {
+									e.preventDefault();
+									if (p !== currentPage) {
+										showPage(p);
+										scrollToProjectsTop();
+									}
+								};
+							})(i);
+							paginationContainer.appendChild(pageBtn);
+						}
+
+						// Next Button
+						const nextBtn = document.createElement('button');
+						nextBtn.className = `pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+						nextBtn.innerHTML = 'Next <i class="fa fa-chevron-right"></i>';
+						nextBtn.onclick = function(e) {
+							e.preventDefault();
+							if (currentPage < totalPages) {
+								showPage(currentPage + 1);
+								scrollToProjectsTop();
+							}
+						};
+						paginationContainer.appendChild(nextBtn);
+					}
+
+					function scrollToProjectsTop() {
+						const projectArticle = document.getElementById('project');
+						if (projectArticle) {
+							projectArticle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+						} else {
+							window.scrollTo({ top: 0, behavior: 'smooth' });
+						}
+					}
+
+					// Initialize page 1
+					showPage(1);
+				})();
 			</script>
 
 	</body>
